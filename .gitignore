@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Cached data (regenerated via CLI commands)
+data/ohlcv/
+data/tickers.parquet
+data/fundamentals.parquet
+
+# Scan output
+output_results/
+
+# Editor/AI local settings
+.claude/
