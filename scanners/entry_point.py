@@ -270,21 +270,21 @@ class EntryPointScanner(BaseScanner):
         else:
             signal = "WATCH"
 
+        # Compact entry label: "HMR@M10(0d)"
+        _sig_short = {"HAMMER": "HMR", "TOUCH": "TCH", "APPROACHING": "APR"}
+        ma_label = best_details.get("ma", "").replace("MA", "M")
+        ago_val = best_details.get("candle_ago", 0)
+        entry_label = f"{_sig_short.get(best_signal, best_signal)}@{ma_label}({ago_val}d)"
+
         return ScanResult(
             ticker=ticker,
             score=round(score, 1),
             signal=signal,
             details={
-                "close": round(latest_close, 2),
-                "entry": best_signal,
-                "at": best_details.get("ma", ""),
-                "dist_%": round(best_details.get("close_dist_%", 0), 1),
-                "ago": best_details.get("candle_ago", 0),
-                "ath_%": round(pct_from_ath, 1),
-                f"ma{self.d_fast}": round(mf_val, 2),
-                f"ma{self.d_mid}": round(mm_val, 2),
-                "wk_align": "Y" if weekly_full_align else "N",
-                "sector": fundamentals.get("sector", "N/A"),
-                "cap_B": round(fundamentals.get("marketCap", 0) / 1e9, 1),
+                "entry": entry_label,
+                "dist%": round(best_details.get("close_dist_%", 0), 1),
+                "ath%": round(pct_from_ath, 1),
+                "wk": "Y" if weekly_full_align else "",
+                "cap$B": round(fundamentals.get("marketCap", 0) / 1e9, 1),
             },
         )

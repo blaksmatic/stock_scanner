@@ -27,16 +27,17 @@ def print_results(results: list[ScanResult], scanner_name: str):
     table = Table(
         title=f"Scanner: {scanner_name} | {datetime.now():%Y-%m-%d %H:%M}",
         show_lines=False,
+        expand=True,
     )
-    table.add_column("#", style="dim", width=4)
-    table.add_column("Ticker", style="bold cyan")
-    table.add_column("Signal")
-    table.add_column("Score", justify="right")
+    table.add_column("#", style="dim", width=3, no_wrap=True)
+    table.add_column("Ticker", style="bold cyan", no_wrap=True)
+    table.add_column("Signal", no_wrap=True)
+    table.add_column("Score", justify="right", no_wrap=True)
 
     # Dynamic columns from details
     detail_keys = list(sorted_results[0].details.keys())
     for key in detail_keys:
-        table.add_column(key, justify="right")
+        table.add_column(key, justify="right", no_wrap=True, overflow="ellipsis")
 
     for i, r in enumerate(sorted_results, 1):
         color = SIGNAL_COLORS.get(r.signal, "white")
