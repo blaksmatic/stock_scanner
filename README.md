@@ -1,3 +1,5 @@
+English | [简体中文](docs/README_CN.md)
+
 # Stock Scanner
 
 A CLI tool for scanning US stocks to find investment opportunities using pluggable algorithm-based scanners. Data sourced from Yahoo Finance, cached locally as Parquet files.
