@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 @click.group()
 def cli():
-    """Stock Scanner CLI - scan US stocks for investment opportunities."""
+    """Market Lens CLI - analyze US stocks for investment opportunities."""
     pass
 
 

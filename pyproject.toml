@@ -1,7 +1,7 @@
 [project]
-name = "stock-scanner"
+name = "market-lens"
 version = "0.1.0"
-description = "CLI stock scanner with pluggable strategies"
+description = "CLI stock analyzer with pluggable strategies"
 requires-python = ">=3.12"
 dependencies = [
     "yfinance>=1.0",
@@ -13,4 +13,4 @@ dependencies = [
 ]
 
 [project.scripts]
-stock-scanner = "main:cli"
+market-lens = "main:cli"

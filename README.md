@@ -1,6 +1,6 @@
 English | [简体中文](docs/README_CN.md)
 
-# Stock Scanner
+# Market Lens
 
 A CLI tool for analyzing US stocks to find investment opportunities using pluggable algorithm-based analyzers. Data sourced from Yahoo Finance, cached locally as Parquet files.
 

@@ -1,6 +1,6 @@
 [English](../README.md) | 简体中文
 
-# Stock Analyzer - 美股分析器
+# Market Lens - 美股分析器
 
 一个基于命令行的美股分析工具，通过可插拔的技术分析算法寻找投资机会。数据来源于 Yahoo Finance，本地缓存为 Parquet 文件。
 
