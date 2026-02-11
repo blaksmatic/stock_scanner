@@ -7,22 +7,21 @@
 ## 安装
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+brew install uv
+uv sync
 ```
 
 ## 快速开始
 
 ```bash
 # 1. 获取股票池（市值 > 50亿美元的美股）
-python main.py refresh-tickers
+uv run python main.py refresh-tickers
 
 # 2. 拉取 OHLCV 行情数据 + 基本面数据
-python main.py fetch-data
+uv run python main.py fetch-data
 
-# 3. 运行扫描器
-python main.py scan -s entry_point --top 20
+# 3. 运行扫描器（自动更新数据 + 回测排名靠前的结果）
+uv run python main.py scan -s entry_point --top 20
 ```
 
 ## 命令说明
@@ -32,7 +31,7 @@ python main.py scan -s entry_point --top 20
 从 Yahoo Finance 筛选器获取 NYSE + NASDAQ 市值超过 50 亿美元的所有美股，缓存至 `data/tickers.parquet`。
 
 ```bash
-python main.py refresh-tickers
+uv run python main.py refresh-tickers
 ```
 
 ### `fetch-data`
@@ -40,12 +39,12 @@ python main.py refresh-tickers
 拉取股票池中所有股票的日线 OHLCV 数据和基本面数据。
 
 ```bash
-python main.py fetch-data                    # 拉取全部（默认 5 年历史数据）
-python main.py fetch-data --years 3          # 3 年历史数据
-python main.py fetch-data --full             # 强制全量重新下载
-python main.py fetch-data -t AAPL -t MSFT    # 仅拉取指定股票
-python main.py fetch-data --ohlcv-only       # 仅拉取行情，跳过基本面
-python main.py fetch-data --fundamentals-only
+uv run python main.py fetch-data                    # 拉取全部（默认 5 年历史数据）
+uv run python main.py fetch-data --years 3          # 3 年历史数据
+uv run python main.py fetch-data --full             # 强制全量重新下载
+uv run python main.py fetch-data -t AAPL -t MSFT    # 仅拉取指定股票
+uv run python main.py fetch-data --ohlcv-only       # 仅拉取行情，跳过基本面
+uv run python main.py fetch-data --fundamentals-only
 ```
 
 **缓存机制**：OHLCV 数据按股票分别缓存为 Parquet 文件，后续运行仅增量拉取新数据。缓存会感知交易日——周末或盘前不会重复拉取。
@@ -55,21 +54,44 @@ python main.py fetch-data --fundamentals-only
 运行扫描器分析缓存数据。默认会先更新 OHLCV 数据（如缓存已是最新则自动跳过）。
 
 ```bash
-python main.py scan -s entry_point                      # 运行扫描器（自动更新数据）
-python main.py scan -s entry_point --no-update           # 跳过数据更新
-python main.py scan -s entry_point --top 20              # 仅显示前 20 个结果
-python main.py scan -s entry_point --csv                 # 导出结果为 CSV
-python main.py scan -s entry_point -t AAPL -t MSFT       # 扫描指定股票
-python main.py scan -s ma_pullback -p pullback_pct=3     # 覆盖扫描器参数
+uv run python main.py scan -s entry_point                      # 运行扫描器（自动更新数据，回测排名靠前的结果）
+uv run python main.py scan -s entry_point --no-update           # 跳过数据更新
+uv run python main.py scan -s entry_point --top 20              # 仅显示前 20 个结果
+uv run python main.py scan -s entry_point --csv                 # 导出结果为 CSV
+uv run python main.py scan -s entry_point -t AAPL -t MSFT       # 扫描指定股票
+uv run python main.py scan -s ma_pullback -p pullback_pct=3     # 覆盖扫描器参数
 ```
+
+`scan` 命令会自动对排名靠前的结果进行回测。最终得分由 60% 扫描得分 + 40% 回测得分混合计算。结果中的 `bt` 列格式为 `胜率%/平均收益/样本数`。
 
 ### `list-scan`
 
 列出所有可用的扫描器。
 
 ```bash
-python main.py list-scan
+uv run python main.py list-scan
 ```
+
+### `backtest`
+
+对指定股票或扫描器的头部结果运行均线敏感度回测。遍历历史 OHLCV 数据，寻找趋势排列时的所有均线触及事件，并衡量反弹成功率。
+
+```bash
+uv run python main.py backtest -t AAPL -t MSFT               # 回测指定股票
+uv run python main.py backtest -s entry_point                  # 先运行扫描器，再回测头部结果
+uv run python main.py backtest -s entry_point --top 20         # 回测扫描结果前 20 名
+uv run python main.py backtest -t AAPL --hold-days 10          # 自定义持仓天数（默认 5）
+uv run python main.py backtest -t AAPL --strategy max_return   # 使用最大收益策略
+uv run python main.py backtest -t AAPL --csv                   # 导出结果为 CSV
+```
+
+**策略：**
+- `bounce`（默认）-- 从触及日收盘价到 N 个持仓日后收盘价的收益率
+- `max_return` -- 持仓窗口内的最大可能收益（最高点）
+
+**输出列：** `win%`（胜率）、`avg%`（平均收益）、`n`（样本数）、按均线分类的明细（`m10w%`、`m10n`、`m20w%`、`m20n`）
+
+**评分：** 胜率与平均收益的加权组合，历史触及次数不足 10 次时会有置信度惩罚。
 
 ## 扫描器
 
@@ -136,14 +158,15 @@ class MyScanner(BaseScanner):
         )
 ```
 
-然后运行：`python main.py scan -s my_scanner`
+然后运行：`uv run python main.py scan -s my_scanner`
 
 ## 项目结构
 
 ```
 main.py                 CLI 入口
 config.py               路径与常量配置
-requirements.txt        Python 依赖
+pyproject.toml          依赖与项目元信息（由 uv 管理）
+uv.lock                 锁定的依赖版本
 tickers/
   universe.py           通过 yfinance 筛选器获取股票池
 data/
@@ -155,6 +178,8 @@ scanners/
   ma_pullback.py        均线排列 + 回踩扫描器
   strong_pullback.py    强势周线趋势 + 日线反弹扫描器
   entry_point.py        趋势入场点扫描器（触及/锤子线识别）
+backtest/
+  ma_sensitivity.py     均线触及回测引擎（bounce + max_return 策略）
 output/
   formatter.py          Rich 终端表格 + CSV 导出
 ```
